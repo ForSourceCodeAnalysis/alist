@@ -5,6 +5,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+//初始化索引
 func InitIndex() {
 	progress, err := search.Progress()
 	if err != nil {

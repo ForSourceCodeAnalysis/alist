@@ -89,7 +89,7 @@ BuildDocker() {
 }
 
 BuildRelease() {
-  rm -rf .git/
+  # rm -rf .git/
   mkdir -p "build"
   muslflags="--extldflags '-static -fpic' $ldflags"
   BASE="https://musl.nn.ci/"
