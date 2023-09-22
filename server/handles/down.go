@@ -27,7 +27,7 @@ func Down(c *gin.Context) {
 		return
 	}
 	if common.ShouldProxy(storage, filename) {
-		Proxy(c)
+		Proxy(c) //使用代理
 		return
 	} else {
 		link, _, err := fs.Link(c, rawPath, model.LinkArgs{

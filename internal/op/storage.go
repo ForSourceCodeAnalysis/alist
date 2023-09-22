@@ -68,9 +68,12 @@ func CreateStorage(ctx context.Context, storage model.Storage) (uint, error) {
 
 // LoadStorage load exist storage in db to memory
 func LoadStorage(ctx context.Context, storage model.Storage) error {
+	//规范化挂载路径，避免一些特殊字符影响
 	storage.MountPath = utils.FixAndCleanPath(storage.MountPath)
 	// check driver first
 	driverName := storage.Driver
+	//获取存储驱动，比如是ali,baidu,123pan等，后续的处理会调用对应的存储驱动
+	//驱动会在对应的驱动文件中自动执行init()进行注册
 	driverNew, err := GetDriver(driverName)
 	if err != nil {
 		return errors.WithMessage(err, "failed get driver new")
@@ -85,14 +88,16 @@ func LoadStorage(ctx context.Context, storage model.Storage) error {
 
 // initStorage initialize the driver and store to storagesMap
 func initStorage(ctx context.Context, storage model.Storage, storageDriver driver.Driver) (err error) {
-	storageDriver.SetStorage(storage)
+	storageDriver.SetStorage(storage) //实际上调用的driver.Meta.Storage,这里是通过匿名成员特性实现直接调用
 	driverStorage := storageDriver.GetStorage()
 
 	// Unmarshal Addition
 	err = utils.Json.UnmarshalFromString(driverStorage.Addition, storageDriver.GetAddition())
 	if err == nil {
+		//主要是获取用户信息，规范化一些配置
 		err = storageDriver.Init(ctx)
 	}
+	//记录映射信息
 	storagesMap.Store(driverStorage.MountPath, storageDriver)
 	if err != nil {
 		driverStorage.SetStatus(err.Error())
@@ -232,6 +237,7 @@ func saveDriverStorage(driver driver.Driver) error {
 		return errors.Wrap(err, "error while marshal addition")
 	}
 	storage.Addition = str
+	//更新数据库
 	err = db.UpdateStorage(storage)
 	if err != nil {
 		return errors.WithMessage(err, "failed update storage in database")
@@ -265,6 +271,7 @@ func getStoragesByPath(path string) []driver.Driver {
 	sort.Slice(storages, func(i, j int) bool {
 		return storages[i].GetStorage().MountPath < storages[j].GetStorage().MountPath
 	})
+
 	return storages
 }
 

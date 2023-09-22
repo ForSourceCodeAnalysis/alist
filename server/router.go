@@ -20,29 +20,34 @@ func Init(e *gin.Engine) {
 		})
 	}
 	Cors(e)
+	//创建分组路由
 	g := e.Group(conf.URL.Path)
 	if conf.Conf.Scheme.HttpPort != -1 && conf.Conf.Scheme.HttpsPort != -1 && conf.Conf.Scheme.ForceHttps {
-		g.Use(middlewares.ForceHttps)
+		g.Use(middlewares.ForceHttps) //强制启用https
 	}
-	g.Any("/ping", func(c *gin.Context) {
+	g.Any("/ping", func(c *gin.Context) { //用于测试网站是否可以正常访问，类似于ping命令
 		c.String(200, "pong")
 	})
-	g.GET("/favicon.ico", handles.Favicon)
-	g.GET("/robots.txt", handles.Robots)
-	g.GET("/i/:link_name", handles.Plist)
+	g.GET("/favicon.ico", handles.Favicon) //网站图标
+	g.GET("/robots.txt", handles.Robots)   //爬虫访问控制
+	g.GET("/i/:link_name", handles.Plist)  //
 	common.SecretKey = []byte(conf.Conf.JwtSecret)
 	g.Use(middlewares.StoragesLoaded)
-	if conf.Conf.MaxConnections > 0 {
+	if conf.Conf.MaxConnections > 0 { //并发数限制
 		g.Use(middlewares.MaxAllowed(conf.Conf.MaxConnections))
 	}
-	WebDav(g.Group("/dav"))
+	WebDav(g.Group("/dav")) //webdav服务
 
+	//下载，代理下载
+	//中间件会校验要下载的文件是否配置了元数据（默认是没有的），如果没有，就可以下载
+	//注意：由于metas配置是针对游客的，所以这个路由并没有校验权限；如果知道文件路径，而又没有配置元数据，
+	//     游客是可以通过此路由直接下载文件的
 	g.GET("/d/*path", middlewares.Down, handles.Down)
 	g.GET("/p/*path", middlewares.Down, handles.Proxy)
 	g.HEAD("/d/*path", middlewares.Down, handles.Down)
 	g.HEAD("/p/*path", middlewares.Down, handles.Proxy)
 
-	api := g.Group("/api")
+	api := g.Group("/api") //api
 	auth := api.Group("", middlewares.Auth)
 	webauthn := api.Group("/authn", middlewares.Authn)
 
@@ -157,6 +162,7 @@ func _fs(g *gin.RouterGroup) {
 	g.POST("/add_qbit", handles.AddQbittorrent)
 }
 
+// 中间件
 func Cors(r *gin.Engine) {
 	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true

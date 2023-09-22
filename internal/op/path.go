@@ -1,8 +1,9 @@
 package op
 
 import (
-	"github.com/alist-org/alist/v3/internal/errs"
 	"strings"
+
+	"github.com/alist-org/alist/v3/internal/errs"
 
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/pkg/utils"
@@ -22,7 +23,7 @@ func GetStorageAndActualPath(rawPath string) (storage driver.Driver, actualPath 
 		err = errs.NewErr(errs.StorageNotFound, "rawPath: %s", rawPath)
 		return
 	}
-	log.Debugln("use storage: ", storage.GetStorage().MountPath)
+	log.Info("use storage: ", storage.GetStorage().MountPath)
 	mountPath := utils.GetActualMountPath(storage.GetStorage().MountPath)
 	actualPath = utils.FixAndCleanPath(strings.TrimPrefix(rawPath, mountPath))
 	return

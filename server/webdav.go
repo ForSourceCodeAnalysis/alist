@@ -19,10 +19,13 @@ import (
 
 var handler *webdav.Handler
 
+// webdav是一种协议标准，扩展了http，我们要实现webdav协议，就是按照其标准实现其特性和对应的接口
+// 通过webdav的实现，可以让我们挂载的一些不支持webdav的网盘，变相支持webdav
+// 具体的标准可以参考webdav rfc文件
 func WebDav(dav *gin.RouterGroup) {
 	handler = &webdav.Handler{
 		Prefix:     path.Join(conf.URL.Path, "/dav"),
-		LockSystem: webdav.NewMemLS(),
+		LockSystem: webdav.NewMemLS(), //锁系统
 		Logger: func(request *http.Request, err error) {
 			log.Errorf("%s %s %+v", request.Method, request.URL.Path, err)
 		},
@@ -46,6 +49,7 @@ func ServeWebDAV(c *gin.Context) {
 	handler.ServeHTTP(c.Writer, c.Request.WithContext(ctx))
 }
 
+// 认证中间件
 func WebDAVAuth(c *gin.Context) {
 	guest, _ := op.GetGuest()
 	username, password, ok := c.Request.BasicAuth()
