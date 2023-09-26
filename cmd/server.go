@@ -50,7 +50,7 @@ the address is defined in config file`,
 			utils.Log.Infof("start HTTP server @ %s", httpBase)
 			httpSrv = &http.Server{Addr: httpBase, Handler: r}
 			go func() {
-				err := httpSrv.ListenAndServe()
+				err := httpSrv.ListenAndServe() //启动http服务
 				if err != nil && err != http.ErrServerClosed {
 					utils.Log.Fatalf("failed to start http: %s", err.Error())
 				}
@@ -61,13 +61,14 @@ the address is defined in config file`,
 			utils.Log.Infof("start HTTPS server @ %s", httpsBase)
 			httpsSrv = &http.Server{Addr: httpsBase, Handler: r}
 			go func() {
+				//启动https服务
 				err := httpsSrv.ListenAndServeTLS(conf.Conf.Scheme.CertFile, conf.Conf.Scheme.KeyFile)
 				if err != nil && err != http.ErrServerClosed {
 					utils.Log.Fatalf("failed to start https: %s", err.Error())
 				}
 			}()
 		}
-		if conf.Conf.Scheme.UnixFile != "" {
+		if conf.Conf.Scheme.UnixFile != "" { //上面监听的是端口，这里监听socket
 			utils.Log.Infof("start unix server @ %s", conf.Conf.Scheme.UnixFile)
 			unixSrv = &http.Server{Handler: r}
 			go func() {
@@ -98,9 +99,9 @@ the address is defined in config file`,
 		// kill -2 is syscall.SIGINT
 		// kill -9 is syscall. SIGKILL but can"t be catch, so don't need add it
 		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-		<-quit
+		<-quit //阻塞等待退出信号
 		utils.Log.Println("Shutdown server...")
-
+		//收到退出信号后的一些处理，把之前打开的服务依次关闭
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
 		var wg sync.WaitGroup
