@@ -13,19 +13,21 @@ import (
 )
 
 func FsStream(c *gin.Context) {
+	//目的目录，非源目录 例如挂载了/baidu，上传文件filename，则path=/baidu/filename
 	path := c.GetHeader("File-Path")
-	path, err := url.PathUnescape(path)
+	path, err := url.PathUnescape(path) //
 	if err != nil {
 		common.ErrorResp(c, err, 400)
 		return
 	}
-	asTask := c.GetHeader("As-Task") == "true"
-	user := c.MustGet("user").(*model.User)
+	asTask := c.GetHeader("As-Task") == "true" //是否按异步任务处理
+	user := c.MustGet("user").(*model.User)    //获取用户，中间件会自动解析token并设置user
 	path, err = user.JoinPath(path)
 	if err != nil {
 		common.ErrorResp(c, err, 403)
 		return
 	}
+
 	dir, name := stdpath.Split(path)
 	sizeStr := c.GetHeader("Content-Length")
 	size, err := strconv.ParseInt(sizeStr, 10, 64)
@@ -33,11 +35,12 @@ func FsStream(c *gin.Context) {
 		common.ErrorResp(c, err, 400)
 		return
 	}
+	//创建文件流
 	stream := &model.FileStream{
 		Obj: &model.Object{
 			Name:     name,
 			Size:     size,
-			Modified: time.Now(),
+			Modified: time.Now(), //这里把修改时间设置为了当前时间，而非源文件最后一次修改时间
 		},
 		ReadCloser:   c.Request.Body,
 		Mimetype:     c.GetHeader("Content-Type"),

@@ -93,6 +93,7 @@ func Remove(ctx context.Context, path string) error {
 	return err
 }
 
+// 直接上传，相对于异步任务上传而言
 func PutDirectly(ctx context.Context, dstDirPath string, file *model.FileStream, lazyCache ...bool) error {
 	err := putDirectly(ctx, dstDirPath, file, lazyCache...)
 	if err != nil {

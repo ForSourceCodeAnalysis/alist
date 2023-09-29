@@ -12,6 +12,8 @@ import (
 
 // GetStorageAndActualPath Get the corresponding storage and actual path
 // for path: remove the mount path prefix and join the actual root folder if exists
+// alist挂载目录与网盘实际目录的转换，比如把百度网盘里面的/music文件夹挂载到alist里面的/baidu
+// 上传文件时，传递的地址是/baidu/filename，程序需要转成/music/filename上传到百度网盘中
 func GetStorageAndActualPath(rawPath string) (storage driver.Driver, actualPath string, err error) {
 	rawPath = utils.FixAndCleanPath(rawPath)
 	storage = GetBalancedStorage(rawPath)
