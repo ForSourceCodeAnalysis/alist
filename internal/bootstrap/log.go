@@ -29,7 +29,7 @@ func setLog(l *logrus.Logger) {
 		l.SetLevel(logrus.DebugLevel)
 		l.SetReportCaller(true)
 	} else {
-		l.SetLevel(logrus.InfoLevel)
+		l.SetLevel(logrus.DebugLevel)
 		l.SetReportCaller(false)
 	}
 }

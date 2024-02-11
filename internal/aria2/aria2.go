@@ -28,11 +28,11 @@ func InitAria2Client(uri string, secret string, timeout int) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "failed to init aria2 client")
 	}
-	version, err := c.GetVersion()
+	version, err := c.GetVersion() //这句的目的是为了验证aria2服务是否配置正确
 	if err != nil {
 		return "", errors.Wrapf(err, "failed get aria2 version")
 	}
-	client = c
+	client = c //client是全局变量
 	log.Infof("using aria2 version: %s", version.Version)
 	return version.Version, nil
 }

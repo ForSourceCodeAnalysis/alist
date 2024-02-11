@@ -92,6 +92,7 @@ func Key(storage driver.Driver, path string) string {
 }
 
 // List files in storage, not contains virtual file
+// 获取文件列表，如果设置了缓存，会优先从缓存中获取
 func List(ctx context.Context, storage driver.Driver, path string, args model.ListArgs, refresh ...bool) ([]model.Obj, error) {
 	if storage.Config().CheckStatus && storage.GetStorage().Status != WORK {
 		return nil, errors.Errorf("storage not init: %s", storage.GetStorage().Status)
@@ -159,6 +160,7 @@ func Get(ctx context.Context, storage driver.Driver, path string) (model.Obj, er
 	log.Debugf("op.Get %s", path)
 
 	// get the obj directly without list so that we can reduce the io
+	//driver.Getter只有部分驱动有，包括alias,crypt,local
 	if g, ok := storage.(driver.Getter); ok {
 		obj, err := g.Get(ctx, path)
 		if err == nil {
@@ -178,11 +180,11 @@ func Get(ctx context.Context, storage driver.Driver, path string) (model.Obj, er
 				Modified: storage.GetStorage().Modified,
 				IsFolder: true,
 			}
-		case driver.IRootPath:
+		case driver.IRootPath: //Addition匿名成员driver.RootPath
 			rootObj = &model.Object{
-				Path:     r.GetRootPath(),
+				Path:     r.GetRootPath(), //挂载的网盘根目录
 				Name:     RootName,
-				Size:     0,
+				Size:     0, //这里直接设置成了0
 				Modified: storage.GetStorage().Modified,
 				IsFolder: true,
 			}
@@ -205,7 +207,7 @@ func Get(ctx context.Context, storage driver.Driver, path string) (model.Obj, er
 	}
 
 	// not root folder
-	dir, name := stdpath.Split(path)
+	dir, name := stdpath.Split(path) //
 	files, err := List(ctx, storage, dir, model.ListArgs{})
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed get parent list")
@@ -496,8 +498,8 @@ func Put(ctx context.Context, storage driver.Driver, dstDirPath string, file mod
 	tempPath := stdpath.Join(dstDirPath, tempName)
 	fi, err := GetUnwrap(ctx, storage, dstPath)
 	if err == nil {
-		if fi.GetSize() == 0 {
-			err = Remove(ctx, storage, dstPath)
+		if fi.GetSize() == 0 { //覆盖上传
+			err = Remove(ctx, storage, dstPath) //先移除已存在的
 			if err != nil {
 				return errors.WithMessagef(err, "while uploading, failed remove existing file which size = 0")
 			}

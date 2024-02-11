@@ -61,6 +61,7 @@ func (h *httpCaller) Close() (err error) {
 
 func (h *httpCaller) setNotifier(ctx context.Context, u url.URL, notifier Notifier) (err error) {
 	u.Scheme = "ws"
+	//websocket连接
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
 		return
@@ -70,6 +71,8 @@ func (h *httpCaller) setNotifier(ctx context.Context, u url.URL, notifier Notifi
 		defer h.wg.Done()
 		defer conn.Close()
 		select {
+		//httpCaller本身是有一个context.CancelFunc的，调用上面的h.Close()会调用h.cancel从而关闭context,
+		//context关闭会触发下面的事件，也就是说这里是处理关闭aria2 rpc连接的
 		case <-ctx.Done():
 			conn.SetWriteDeadline(time.Now().Add(time.Second))
 			if err := conn.WriteMessage(websocket.CloseMessage,
@@ -86,10 +89,11 @@ func (h *httpCaller) setNotifier(ctx context.Context, u url.URL, notifier Notifi
 		var err error
 		for {
 			select {
-			case <-ctx.Done():
+			case <-ctx.Done(): //这个可以多处监听，都可以触发，但是触发顺序是随机的
 				return
 			default:
 			}
+			//aria2 通知事件
 			if err = conn.ReadJSON(&request); err != nil {
 				select {
 				case <-ctx.Done():
@@ -120,6 +124,7 @@ func (h *httpCaller) setNotifier(ctx context.Context, u url.URL, notifier Notifi
 	return
 }
 
+// 向aria2发送请求，支持的方法参考aria2在线文档 https://aria2.github.io/manual/en/html/aria2c.html#methods
 func (h httpCaller) Call(method string, params, reply interface{}) (err error) {
 	payload, err := EncodeClientRequest(method, params)
 	if err != nil {

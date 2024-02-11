@@ -10,6 +10,7 @@ import (
 )
 
 var (
+	//resty is a Simple HTTP and REST client library for Go
 	NoRedirectClient *resty.Client
 	RestyClient      *resty.Client
 	HttpClient       *http.Client

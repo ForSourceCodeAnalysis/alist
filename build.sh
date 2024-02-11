@@ -89,7 +89,7 @@ BuildDocker() {
 }
 
 BuildRelease() {
-  rm -rf .git/
+  # rm -rf .git/
   mkdir -p "build"
   BuildWinArm64 ./build/alist-windows-arm64.exe
   xgo -out "$appName" -ldflags="$ldflags" -tags=jsoniter .

@@ -5,6 +5,7 @@ import (
 	"github.com/alist-org/alist/v3/pkg/generic_sync"
 )
 
+// aria2 下载事件通知，参考aria2在线文档 https://aria2.github.io/manual/en/html/aria2c.html#event-hook
 const (
 	Downloading = iota
 	Paused

@@ -45,6 +45,7 @@ func (h *Handler) stripPrefix(p string) (string, int, error) {
 	return p, http.StatusNotFound, errPrefixMismatch
 }
 
+// webdav方法的具体实现
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	status, err := http.StatusBadRequest, errUnsupportedMethod
 	brw := newBufferedResponseWriter()

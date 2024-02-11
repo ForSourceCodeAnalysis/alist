@@ -13,6 +13,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// 初始化用户，创建管理员账户，访客账户
 func initUser() {
 	admin, err := op.GetAdmin()
 	adminPassword := random.String(8)

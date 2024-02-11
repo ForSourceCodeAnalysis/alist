@@ -41,15 +41,16 @@ func (d *BaiduNetdisk) GetAddition() driver.Additional {
 }
 
 func (d *BaiduNetdisk) Init(ctx context.Context) error {
+	//规范上传线程配置
 	d.uploadThread, _ = strconv.Atoi(d.UploadThread)
 	if d.uploadThread < 1 || d.uploadThread > 32 {
 		d.uploadThread, d.UploadThread = 3, "3"
 	}
-
+	//分片上传api接口，参考百度网盘开放平台api
 	if _, err := url.Parse(d.UploadAPI); d.UploadAPI == "" || err != nil {
 		d.UploadAPI = "https://d.pcs.baidu.com"
 	}
-
+	//获取用户信息接口，参考百度网盘开放平台api
 	res, err := d.get("/xpan/nas", map[string]string{
 		"method": "uinfo",
 	}, nil)

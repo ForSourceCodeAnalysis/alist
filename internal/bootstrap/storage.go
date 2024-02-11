@@ -15,8 +15,9 @@ func LoadStorages() {
 	if err != nil {
 		utils.Log.Fatalf("failed get enabled storages: %+v", err)
 	}
+	//启动一个协程，避免阻塞主协程
 	go func(storages []model.Storage) {
-		for i := range storages {
+		for i := range storages { //挂载存储
 			err := op.LoadStorage(context.Background(), storages[i])
 			if err != nil {
 				utils.Log.Errorf("failed get enabled storages: %+v", err)

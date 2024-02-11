@@ -6,6 +6,7 @@ import (
 )
 
 func InitAria2() {
+	//这里启动了一个协程，避免阻塞主协程
 	go func() {
 		_, err := aria2.InitClient(2)
 		if err != nil {

@@ -126,6 +126,8 @@ func (d *LanZou) request(url string, method string, callback base.ReqCallback, u
 }
 
 func (d *LanZou) Login() ([]*http.Cookie, error) {
+	//网页登录的时候，需要滑块验证获取setSessionId,setSig等，但是这里不设置也是可以登录成功的
+	//看不懂蓝奏云的操作，网页滑块验证还有什么意义
 	resp, err := base.NewRestyClient().SetRedirectPolicy(resty.NoRedirectPolicy()).
 		R().SetFormData(map[string]string{
 		"task":         "3",
