@@ -46,6 +46,7 @@ func (h *Handler) stripPrefix(p string) (string, int, error) {
 	return p, http.StatusNotFound, errPrefixMismatch
 }
 
+// webdav方法的具体实现
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	status, err := http.StatusBadRequest, errUnsupportedMethod
 	brw := newBufferedResponseWriter()
@@ -218,6 +219,8 @@ func (h *Handler) handleGetHeadPost(w http.ResponseWriter, r *http.Request) (sta
 	// TODO: check locks for read-only access??
 	ctx := r.Context()
 	user := ctx.Value("user").(*model.User)
+	//这里会拼接账号设置的根目录路径，比如账号设置的根目录为/dir1/dir2,请求的路径为/path/file.txt
+	//拼接后的路径为/dir1/dir2/path/file.txt
 	reqPath, err = user.JoinPath(reqPath)
 	if err != nil {
 		return http.StatusForbidden, err

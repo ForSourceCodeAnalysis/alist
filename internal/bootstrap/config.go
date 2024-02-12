@@ -33,15 +33,18 @@ func InitConfig() {
 		if err != nil {
 			log.Fatalf("failed to create config file: %+v", err)
 		}
+		//如果对应目录的配置文件不存在，创建一份默认配置
 		conf.Conf = conf.DefaultConfig()
 		if !utils.WriteJsonToFile(configPath, conf.Conf) {
 			log.Fatalf("failed to create default config file")
 		}
 	} else {
+		//配置文件存在的情况下，从配置文件读取配置
 		configBytes, err := os.ReadFile(configPath)
 		if err != nil {
 			log.Fatalf("reading config file error: %+v", err)
 		}
+		//这里又一次创建了一份默认配置，因为配置文件里面的配置可能不全，需要合并默认配置和配置文件里面的内容，当然配置文件的配置优先级更高
 		conf.Conf = conf.DefaultConfig()
 		err = utils.Json.Unmarshal(configBytes, conf.Conf)
 		if err != nil {
@@ -57,7 +60,7 @@ func InitConfig() {
 			log.Fatalf("update config struct error: %+v", err)
 		}
 	}
-	if !conf.Conf.Force {
+	if !conf.Conf.Force { //强制从环境变量读取
 		confFromEnv()
 	}
 	// convert abs path
@@ -77,8 +80,8 @@ func InitConfig() {
 		log.Fatalf("create temp dir error: %+v", err)
 	}
 	log.Debugf("config: %+v", conf.Conf)
-	base.InitClient()
-	initURL()
+	base.InitClient() //初始化 restyClient 和 httpClient
+	initURL()         //初始化alist web 服务网址
 }
 
 func confFromEnv() {

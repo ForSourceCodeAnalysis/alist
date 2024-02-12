@@ -76,6 +76,7 @@ func InitialSettings() []model.SettingItem {
 	} else {
 		token = random.Token()
 	}
+	//网站的一些配置，后期可以修改
 	initialSettingItems = []model.SettingItem{
 		// site settings
 		{Key: conf.VERSION, Value: conf.Version, Type: conf.TypeString, Group: model.SITE, Flag: model.READONLY},

@@ -20,13 +20,17 @@ func Robots(c *gin.Context) {
 	c.String(200, setting.GetStr(conf.RobotsTxt))
 }
 
+// 这个路由不知道是干什么的，也不知道用在什么场景下
+// 根据内容分析就是展示特性列表的
 func Plist(c *gin.Context) {
+	//参数link_name必须是base64加密格式
 	linkNameB64 := strings.TrimSuffix(c.Param("link_name"), ".plist")
 	linkName, err := utils.SafeAtob(linkNameB64)
 	if err != nil {
 		common.ErrorResp(c, err, 400)
 		return
 	}
+	//且解密后，必须有且仅有一个/分割
 	linkNameSplit := strings.Split(linkName, "/")
 	if len(linkNameSplit) != 2 {
 		common.ErrorStrResp(c, "malformed link", 400)
@@ -43,6 +47,7 @@ func Plist(c *gin.Context) {
 		common.ErrorResp(c, err, 400)
 		return
 	}
+	//这句话应该是误打了，下面在fullName使用前又重新赋值了
 	fullName := c.Param("name")
 	Url := link.String()
 	Url = strings.ReplaceAll(Url, "<", "[")

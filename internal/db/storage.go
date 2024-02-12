@@ -60,6 +60,7 @@ func GetStorageByMountPath(mountPath string) (*model.Storage, error) {
 	return &storage, nil
 }
 
+// 从数据库获取已经配置且使能了的存储
 func GetEnabledStorages() ([]model.Storage, error) {
 	var storages []model.Storage
 	if err := db.Where(fmt.Sprintf("%s = ?", columnName("disabled")), false).Find(&storages).Error; err != nil {
