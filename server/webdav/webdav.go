@@ -8,13 +8,14 @@ package webdav // import "golang.org/x/net/webdav"
 import (
 	"errors"
 	"fmt"
-	"github.com/alist-org/alist/v3/internal/stream"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
 	"strings"
 	"time"
+
+	"github.com/alist-org/alist/v3/internal/stream"
 
 	"github.com/alist-org/alist/v3/internal/errs"
 	"github.com/alist-org/alist/v3/internal/fs"
@@ -218,6 +219,8 @@ func (h *Handler) handleGetHeadPost(w http.ResponseWriter, r *http.Request) (sta
 	// TODO: check locks for read-only access??
 	ctx := r.Context()
 	user := ctx.Value("user").(*model.User)
+	//这里会拼接账号设置的根目录路径，比如账号设置的根目录为/dir1/dir2,请求的路径为/path/file.txt
+	//拼接后的路径为/dir1/dir2/path/file.txt
 	reqPath, err = user.JoinPath(reqPath)
 	if err != nil {
 		return 403, err
