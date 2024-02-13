@@ -58,22 +58,31 @@ type Cors struct {
 }
 
 type Config struct {
-	Force                 bool        `json:"force" env:"FORCE"`
-	SiteURL               string      `json:"site_url" env:"SITE_URL"`
-	Cdn                   string      `json:"cdn" env:"CDN"`
-	JwtSecret             string      `json:"jwt_secret" env:"JWT_SECRET"`
-	TokenExpiresIn        int         `json:"token_expires_in" env:"TOKEN_EXPIRES_IN"`
-	Database              Database    `json:"database" envPrefix:"DB_"`
-	Scheme                Scheme      `json:"scheme"`
-	TempDir               string      `json:"temp_dir" env:"TEMP_DIR"`
-	BleveDir              string      `json:"bleve_dir" env:"BLEVE_DIR"`
-	DistDir               string      `json:"dist_dir"`
-	Log                   LogConfig   `json:"log"`
-	DelayedStart          int         `json:"delayed_start" env:"DELAYED_START"`
-	MaxConnections        int         `json:"max_connections" env:"MAX_CONNECTIONS"`
-	TlsInsecureSkipVerify bool        `json:"tls_insecure_skip_verify" env:"TLS_INSECURE_SKIP_VERIFY"`
-	Tasks                 TasksConfig `json:"tasks" envPrefix:"TASKS_"`
-	Cors                  Cors        `json:"cors" envPrefix:"CORS_"`
+	Force                 bool           `json:"force" env:"FORCE"`
+	SiteURL               string         `json:"site_url" env:"SITE_URL"`
+	Cdn                   string         `json:"cdn" env:"CDN"`
+	JwtSecret             string         `json:"jwt_secret" env:"JWT_SECRET"`
+	TokenExpiresIn        int            `json:"token_expires_in" env:"TOKEN_EXPIRES_IN"`
+	Database              Database       `json:"database" envPrefix:"DB_"`
+	Scheme                Scheme         `json:"scheme"`
+	TempDir               string         `json:"temp_dir" env:"TEMP_DIR"`
+	BleveDir              string         `json:"bleve_dir" env:"BLEVE_DIR"`
+	DistDir               string         `json:"dist_dir"`
+	Log                   LogConfig      `json:"log"`
+	DelayedStart          int            `json:"delayed_start" env:"DELAYED_START"`
+	MaxConnections        int            `json:"max_connections" env:"MAX_CONNECTIONS"`
+	TlsInsecureSkipVerify bool           `json:"tls_insecure_skip_verify" env:"TLS_INSECURE_SKIP_VERIFY"`
+	Tasks                 TasksConfig    `json:"tasks" envPrefix:"TASKS_"`
+	Cors                  Cors           `json:"cors" envPrefix:"CORS_"`
+	Backup                []BackupConfig `json:"backup" envPrefix:"BACKUP_"`
+}
+
+// 备份配置
+type BackupConfig struct {
+	Src     string   `json:"src" env:"SRC"`         //源文件(夹)
+	Dst     string   `json:"dst" env:"DST"`         //目的驱动目录
+	Exclue  []string `json:"exclude" env:"EXCLUDE"` //需要排除的文件（夹）
+	Dirname string   `json:"dirname" env:"DIRNAME"` //目的文件夹名称
 }
 
 func DefaultConfig() *Config {
