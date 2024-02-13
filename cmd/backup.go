@@ -10,6 +10,7 @@ import (
 
 	"github.com/alist-org/alist/v3/internal/bootstrap"
 	"github.com/alist-org/alist/v3/internal/conf"
+	"github.com/alist-org/alist/v3/internal/db"
 	"github.com/alist-org/alist/v3/internal/fs"
 	interModel "github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/stream"
@@ -74,22 +75,32 @@ func backup() {
 	}
 
 	for _, bc := range backupConf {
+		bc.Src = strings.TrimSuffix(bc.Src, "/")
 		fi, err := os.Stat(bc.Src)
 		if err != nil {
 			logrus.Errorf("读取文件%v信息失败,err:%v", bc.Src, err)
 			continue
 		}
-		bc.Src = strings.TrimSuffix(bc.Src, "/") + "/" //确保文件夹结尾有/
-		dst := strings.TrimSuffix(bc.Src, "/") + "/"
+		dst := strings.TrimSuffix(bc.Dst, "/") + "/"
 		if len(bc.Dirname) > 0 {
 			dst += bc.Dirname + "/"
 		}
 
 		if !fi.IsDir() { //文件直接上传
-			uploadFile(bc.Src, dst, fi)
+			m, f := db.IsFileModified(bc.Src, fi.ModTime())
+			if f {
+				uploadFile(bc.Src, dst, fi)
+				if m == nil {
+					m = &interModel.Backup{
+						FilePath:     bc.Src,
+						LastModified: fi.ModTime(),
+					}
+				}
+				db.UpdateBackupFile(m)
+			}
 			continue
 		}
-
+		bc.Src += "/"
 		//文件夹
 		filepath.Walk(bc.Src, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -107,11 +118,12 @@ func backup() {
 					return nil
 				}
 			}
+			fullDst := dst
 			if strings.Contains(p, "/") {
-				dst += stdPath.Dir(p)
+				fullDst = dst + stdPath.Dir(p)
 			}
 			//上传
-			uploadFile(path, dst, info)
+			uploadFile(path, fullDst, info)
 			return nil
 		})
 	}
@@ -119,6 +131,11 @@ func backup() {
 }
 
 func uploadFile(filePath string, dst string, fileInfo os.FileInfo) {
+	m, f := db.IsFileModified(filePath, fileInfo.ModTime())
+	if !f { //没有变动
+		return
+	}
+
 	fd, err := os.Open(filePath)
 	if err != nil {
 		logrus.Fatal(err)
@@ -137,5 +154,13 @@ func uploadFile(filePath string, dst string, fileInfo os.FileInfo) {
 	err = fs.PutDirectly(context.TODO(), dst, streamer, true)
 	if err != nil {
 		logrus.Fatal(err)
+		return
 	}
+	if m == nil {
+		m = &interModel.Backup{
+			FilePath:     filePath,
+			LastModified: fileInfo.ModTime(),
+		}
+	}
+	db.UpdateBackupFile(m)
 }

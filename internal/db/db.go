@@ -13,7 +13,7 @@ var db *gorm.DB
 func Init(d *gorm.DB) {
 	db = d
 	//自动创建迁移合并数据表 storage user meta settingItem searchNode
-	err := AutoMigrate(new(model.Storage), new(model.User), new(model.Meta), new(model.SettingItem), new(model.SearchNode))
+	err := AutoMigrate(new(model.Storage), new(model.User), new(model.Meta), new(model.SettingItem), new(model.SearchNode), new(model.Backup))
 	if err != nil {
 		log.Fatalf("failed migrate database: %s", err.Error())
 	}
