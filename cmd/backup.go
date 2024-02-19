@@ -75,15 +75,13 @@ func backup() {
 	}
 
 	for _, bc := range backupConf {
-		bc.Src = strings.TrimSuffix(bc.Src, "/")
 		fi, err := os.Stat(bc.Src)
 		if err != nil {
 			logrus.Errorf("读取文件%v信息失败,err:%v", bc.Src, err)
 			continue
 		}
-		dst := strings.TrimSuffix(bc.Dst, "/") + "/"
 		if len(bc.Dirname) > 0 {
-			dst += bc.Dirname + "/"
+			dst = stdPath.Join(dst, bc.Dirname)
 		}
 
 		if !fi.IsDir() { //文件直接上传
@@ -100,7 +98,6 @@ func backup() {
 			}
 			continue
 		}
-		bc.Src += "/"
 		//文件夹
 		filepath.Walk(bc.Src, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -111,7 +108,7 @@ func backup() {
 				return nil
 			}
 			//判断是否在过滤目录中
-			p, _ := strings.CutPrefix(path, bc.Src)
+			p, _ := strings.CutPrefix(path, stdPath.Clean(bc.Src)+"/")
 
 			for _, ex := range bc.Exclue {
 				if ex == path || strings.HasPrefix(p, ex) {
@@ -120,7 +117,7 @@ func backup() {
 			}
 			fullDst := dst
 			if strings.Contains(p, "/") {
-				fullDst = dst + stdPath.Dir(p)
+				fullDst = stdPath.Join(dst, stdPath.Dir(p))
 			}
 			//上传
 			uploadFile(path, fullDst, info)
