@@ -1,0 +1,11 @@
+POST https://up.woozooo.com/mlogin.php HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+task=3
+&uid=16675525271
+&pwd=%29920%29%5EDi*W
+&setSessionId=
+&setSig=
+&setScene=
+&setTocen=
+&formhash=
