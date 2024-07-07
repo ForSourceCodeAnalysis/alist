@@ -6,6 +6,11 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"time"
+
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/errs"
@@ -17,9 +22,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/go-resty/resty/v2"
 	log "github.com/sirupsen/logrus"
-	"io"
-	"net/http"
-	"net/url"
 )
 
 type Pan123 struct {
@@ -132,6 +134,8 @@ func (d *Pan123) MakeDir(ctx context.Context, parentDir model.Obj, dirName strin
 	_, err := d.request(Mkdir, http.MethodPost, func(req *resty.Request) {
 		req.SetBody(data)
 	}, nil)
+	//创建文件夹后，如果立即获取文件列表，会出现获取不到新创建的文件夹的情况，这里延迟返回下
+	time.Sleep(1 * time.Second)
 	return err
 }
 
