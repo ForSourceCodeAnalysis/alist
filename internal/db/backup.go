@@ -27,7 +27,7 @@ func IsFileModified(filePath string, modified time.Time) (f *model.Backup, flag 
 		logrus.Error("查询备份文件信息失败", err)
 		return
 	}
-	flag = !modified.Equal(f.LastModified)
+	flag = modified.After(f.LastModified)
 
 	return f, flag
 }

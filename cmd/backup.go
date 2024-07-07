@@ -3,9 +3,6 @@ package cmd
 import (
 	"context"
 	"os"
-	stdPath "path"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/alist-org/alist/v3/internal/bootstrap"
@@ -61,69 +58,69 @@ func init() {
 }
 
 func backup() {
-	backupConf := conf.Conf.Backup
+	// backupConf := conf.Conf.Backup
 
-	if len(src) > 0 { //命令行参数优先级更高
-		backupConf = []conf.BackupConfig{
-			{
-				Src:     src,
-				Dst:     dst,
-				Dirname: dirname,
-				Exclue:  exclude,
-			},
-		}
-	}
+	// if len(src) > 0 { //命令行参数优先级更高
+	// 	backupConf = []conf.BackupConfig{
+	// 		{
+	// 			Src:     src,
+	// 			Dst:     dst,
+	// 			Dirname: dirname,
+	// 			Exclue:  exclude,
+	// 		},
+	// 	}
+	// }
 
-	for _, bc := range backupConf {
-		fi, err := os.Stat(bc.Src)
-		if err != nil {
-			logrus.Errorf("读取文件%v信息失败,err:%v", bc.Src, err)
-			continue
-		}
-		if len(bc.Dirname) > 0 {
-			dst = stdPath.Join(dst, bc.Dirname)
-		}
+	// for _, bc := range backupConf {
+	// 	fi, err := os.Stat(bc.Src)
+	// 	if err != nil {
+	// 		logrus.Errorf("读取文件%v信息失败,err:%v", bc.Src, err)
+	// 		continue
+	// 	}
+	// 	if len(bc.Dirname) > 0 {
+	// 		dst = stdPath.Join(dst, bc.Dirname)
+	// 	}
 
-		if !fi.IsDir() { //文件直接上传
-			m, f := db.IsFileModified(bc.Src, fi.ModTime())
-			if f {
-				uploadFile(bc.Src, dst, fi)
-				if m == nil {
-					m = &interModel.Backup{
-						FilePath:     bc.Src,
-						LastModified: fi.ModTime(),
-					}
-				}
-				db.UpdateBackupFile(m)
-			}
-			continue
-		}
-		//文件夹
-		filepath.Walk(bc.Src, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				logrus.Errorf("读取文件%v信息失败,err:%v", path, err)
-				return err
-			}
-			if info.IsDir() {
-				return nil
-			}
-			//判断是否在过滤目录中
-			p, _ := strings.CutPrefix(path, stdPath.Clean(bc.Src)+"/")
+	// 	if !fi.IsDir() { //文件直接上传
+	// 		m, f := db.IsFileModified(bc.Src, fi.ModTime())
+	// 		if f {
+	// 			uploadFile(bc.Src, dst, fi)
+	// 			if m == nil {
+	// 				m = &interModel.Backup{
+	// 					FilePath:     bc.Src,
+	// 					LastModified: fi.ModTime(),
+	// 				}
+	// 			}
+	// 			db.UpdateBackupFile(m)
+	// 		}
+	// 		continue
+	// 	}
+	// 	//文件夹
+	// 	filepath.Walk(bc.Src, func(path string, info os.FileInfo, err error) error {
+	// 		if err != nil {
+	// 			logrus.Errorf("读取文件%v信息失败,err:%v", path, err)
+	// 			return err
+	// 		}
+	// 		if info.IsDir() {
+	// 			return nil
+	// 		}
+	// 		//判断是否在过滤目录中
+	// 		p, _ := strings.CutPrefix(path, stdPath.Clean(bc.Src)+"/")
 
-			for _, ex := range bc.Exclue {
-				if ex == path || strings.HasPrefix(p, ex) {
-					return nil
-				}
-			}
-			fullDst := dst
-			if strings.Contains(p, "/") {
-				fullDst = stdPath.Join(dst, stdPath.Dir(p))
-			}
-			//上传
-			uploadFile(path, fullDst, info)
-			return nil
-		})
-	}
+	// 		for _, ex := range bc.Exclue {
+	// 			if ex == path || strings.HasPrefix(p, ex) {
+	// 				return nil
+	// 			}
+	// 		}
+	// 		fullDst := dst
+	// 		if strings.Contains(p, "/") {
+	// 			fullDst = stdPath.Join(dst, stdPath.Dir(p))
+	// 		}
+	// 		//上传
+	// 		uploadFile(path, fullDst, info)
+	// 		return nil
+	// 	})
+	// }
 
 }
 

@@ -14,8 +14,10 @@ import (
 	"time"
 
 	"github.com/alist-org/alist/v3/cmd/flags"
+	mycron "github.com/alist-org/alist/v3/custom/cron"
 	"github.com/alist-org/alist/v3/internal/bootstrap"
 	"github.com/alist-org/alist/v3/internal/conf"
+	"github.com/alist-org/alist/v3/pkg/cron"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/alist-org/alist/v3/server"
 	"github.com/gin-gonic/gin"
@@ -92,6 +94,13 @@ the address is defined in config file`,
 				}
 			}()
 		}
+		//cron task
+		interval := conf.Conf.BackupInterval
+		if interval > 0 {
+			cronTask := cron.NewCron(interval * time.Second)
+			cronTask.Do(mycron.Run)
+		}
+
 		// Wait for interrupt signal to gracefully shutdown the server with
 		// a timeout of 1 second.
 		quit := make(chan os.Signal, 1)

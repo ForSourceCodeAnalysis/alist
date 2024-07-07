@@ -2,6 +2,7 @@ package conf
 
 import (
 	"path/filepath"
+	"time"
 
 	"github.com/alist-org/alist/v3/cmd/flags"
 	"github.com/alist-org/alist/v3/pkg/utils/random"
@@ -74,15 +75,17 @@ type Config struct {
 	TlsInsecureSkipVerify bool           `json:"tls_insecure_skip_verify" env:"TLS_INSECURE_SKIP_VERIFY"`
 	Tasks                 TasksConfig    `json:"tasks" envPrefix:"TASKS_"`
 	Cors                  Cors           `json:"cors" envPrefix:"CORS_"`
-	Backup                []BackupConfig `json:"backup" envPrefix:"BACKUP_"`
+	Backup                []BackupConfig `json:"backup" `
+	BackupInterval        time.Duration  `json:"backup_interval" ` //时间间隔，单位是s
 }
 
 // 备份配置
 type BackupConfig struct {
-	Src     string   `json:"src" env:"SRC"`         //源文件(夹)
-	Dst     string   `json:"dst" env:"DST"`         //目的驱动目录
-	Exclue  []string `json:"exclude" env:"EXCLUDE"` //需要排除的文件（夹）
-	Dirname string   `json:"dirname" env:"DIRNAME"` //目的文件夹名称
+	Src     string   `json:"src" `    //源文件(夹)
+	Dst     []string `json:"dst" `    //目的驱动目录，可以指定多个
+	Ignore  []string `json:"ignore"`  //需要排除的文件（夹）
+	Dirname string   `json:"dirname"` //目的文件夹名称
+	Tag     string   `json:"tag"`     //标识，多处服务共用一个数据库时，可以通过tag区分不同服务的文件
 }
 
 func DefaultConfig() *Config {
