@@ -2,7 +2,9 @@ package db
 
 import (
 	"fmt"
+	"sort"
 
+	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/pkg/errors"
 )
@@ -66,5 +68,15 @@ func GetEnabledStorages() ([]model.Storage, error) {
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	return storages, nil
+	serverStorages := make([]model.Storage, 0)
+	for _, v := range storages {
+		if v.Driver == "Local" && len(conf.Conf.ServerId) > 0 && conf.Conf.ServerId != v.ServerId {
+			continue
+		}
+		serverStorages = append(serverStorages, v)
+	}
+	sort.Slice(serverStorages, func(i, j int) bool {
+		return serverStorages[i].Order < serverStorages[j].Order
+	})
+	return serverStorages, nil
 }
