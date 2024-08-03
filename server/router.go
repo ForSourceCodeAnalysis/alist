@@ -111,6 +111,13 @@ func admin(g *gin.RouterGroup) {
 	storage.POST("/disable", handles.DisableStorage)
 	storage.POST("/load_all", handles.LoadAllStorages)
 
+	backup := g.Group("/backup")
+	backup.GET("/list", handles.ListBackups)
+	backup.GET("/get", handles.GetBackup)
+	backup.POST("/create", handles.CreateBackup)
+	backup.POST("/update", handles.UpdateBackup)
+	backup.POST("/delete", handles.DeleteBackup)
+
 	driver := g.Group("/driver")
 	driver.GET("/list", handles.ListDriverInfo)
 	driver.GET("/names", handles.ListDriverNames)

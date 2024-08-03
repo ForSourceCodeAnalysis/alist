@@ -2,6 +2,7 @@ package conf
 
 import (
 	"path/filepath"
+	"time"
 
 	"github.com/alist-org/alist/v3/cmd/flags"
 	"github.com/alist-org/alist/v3/pkg/utils/random"
@@ -47,8 +48,10 @@ type LogConfig struct {
 }
 
 type TaskConfig struct {
-	Workers  int `json:"workers" env:"WORKERS"`
-	MaxRetry int `json:"max_retry" env:"MAX_RETRY"`
+	Workers         int           `json:"workers" env:"WORKERS"`
+	MaxRetry        int           `json:"max_retry" env:"MAX_RETRY"`
+	PersistPath     string        `json:"persist_path" env:"PERSIST_PATH"`
+	PersistDebounce time.Duration `json:"persist_debounce" env:"PERSIST_DEBOUNCE"`
 }
 
 type TasksConfig struct {
@@ -56,6 +59,7 @@ type TasksConfig struct {
 	Transfer TaskConfig `json:"transfer" envPrefix:"TRANSFER_"`
 	Upload   TaskConfig `json:"upload" envPrefix:"UPLOAD_"`
 	Copy     TaskConfig `json:"copy" envPrefix:"COPY_"`
+	Backup   TaskConfig `json:"backup" envPrefix:"BACKUP_"`
 }
 
 type Cors struct {
@@ -142,6 +146,10 @@ func DefaultConfig() *Config {
 				Workers: 5,
 			},
 			Copy: TaskConfig{
+				Workers:  5,
+				MaxRetry: 2,
+			},
+			Backup: TaskConfig{
 				Workers:  5,
 				MaxRetry: 2,
 			},
