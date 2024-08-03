@@ -6,12 +6,13 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
-	"golang.org/x/time/rate"
 	"io"
 	"net/http"
 	"net/url"
 	"sync"
 	"time"
+
+	"golang.org/x/time/rate"
 
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/driver"
@@ -138,6 +139,7 @@ func (d *Pan123) MakeDir(ctx context.Context, parentDir model.Obj, dirName strin
 	_, err := d.request(Mkdir, http.MethodPost, func(req *resty.Request) {
 		req.SetBody(data)
 	}, nil)
+	time.Sleep(1 * time.Second)
 	return err
 }
 
