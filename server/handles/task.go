@@ -5,6 +5,7 @@ import (
 	"github.com/alist-org/alist/v3/internal/task"
 	"math"
 
+	"github.com/alist-org/alist/v3/internal/backup"
 	"github.com/alist-org/alist/v3/internal/fs"
 	"github.com/alist-org/alist/v3/internal/offline_download/tool"
 	"github.com/alist-org/alist/v3/pkg/utils"
@@ -177,6 +178,7 @@ func taskRoute[T task.TaskInfoWithCreator](g *gin.RouterGroup, manager *tache.Ma
 func SetupTaskRoute(g *gin.RouterGroup) {
 	taskRoute(g.Group("/upload"), fs.UploadTaskManager)
 	taskRoute(g.Group("/copy"), fs.CopyTaskManager)
+	taskRoute(g.Group("/backup"), backup.BackupTaskManager)
 	taskRoute(g.Group("/offline_download"), tool.DownloadTaskManager)
 	taskRoute(g.Group("/offline_download_transfer"), tool.TransferTaskManager)
 }
