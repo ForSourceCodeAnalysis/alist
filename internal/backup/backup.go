@@ -3,8 +3,8 @@ package backup
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -24,12 +24,12 @@ import (
 )
 
 type backupT struct {
-	m    model.Backup
-	gi   *ignore.GitIgnore
-	cron *cron.Cron
+	model.Backup
+	*ignore.GitIgnore
+	*cron.Cron
 }
 
-var backup generic_sync.MapOf[string, backupT]
+var backupMemory generic_sync.MapOf[string, backupT]
 var fsnotifyWatcher *fsnotify.Watcher
 
 // 监听以文件夹为单位，不支持单个文件
@@ -37,9 +37,8 @@ func CreateBackup(c context.Context, b model.Backup) (uint64, error) {
 	logrus.Infof("req backup : %+v", b)
 
 	//判断源文件夹是否已经被监听
-	b.Src = path.Clean(filepath.ToSlash(b.Src))
-	if backup.Has(b.Src) {
-		return 0, errors.WithMessagef(nil, "src %s is already being watched", b.Src)
+	if backupMemory.Has(b.Src) {
+		return 0, fmt.Errorf("src %s has already been watched", b.Src)
 	}
 	//自动备份的是本地文件，与服务器强相关，所以必须配置server_id
 	if len(conf.Conf.ServerId) <= 0 {
@@ -85,10 +84,10 @@ func UpdateBackup(c context.Context, b model.Backup) error {
 	}
 	//如果只是dst变化，不用调整监听，但是需要更新 backup
 	if b.Dst != oldB.Dst {
-		nb, ok := backup.Load(b.Src)
+		nb, ok := backupMemory.Load(b.Src)
 		if ok {
-			nb.m.Dst = b.Dst
-			backup.Store(b.Src, nb)
+			nb.Dst = b.Dst
+			backupMemory.Store(b.Src, nb)
 		}
 	}
 
@@ -104,11 +103,12 @@ func DeleteBackupById(id uint) error {
 		return errors.WithMessage(err, "failed delete backup in database")
 	}
 	removeWatch(m.Src)
-	backup.Delete(m.Src)
+	backupMemory.Delete(m.Src)
 	return nil
 }
 
 func ValidateBackup(b *model.Backup) error {
+	b.Src = filepath.Clean(filepath.ToSlash(b.Src))
 	fi, err := os.Stat(b.Src)
 	if err != nil {
 		return errors.WithMessage(err, "failed read src file/dir info")
@@ -121,7 +121,7 @@ func ValidateBackup(b *model.Backup) error {
 		v = filepath.Clean(filepath.ToSlash(v))
 		_, _, err := op.GetStorageAndActualPath(v)
 		if err != nil {
-			return errors.WithMessagef(err, "failed get storage: %s", v)
+			return errors.WithMessagef(err, "failed get directory: %s", v)
 		}
 		dsts[k] = v
 	}
@@ -148,19 +148,19 @@ func addWatch(b model.Backup) {
 
 	gi := compileGitignore(b.Ignore)
 	bt := backupT{
-		m:  b,
-		gi: gi,
+		Backup:    b,
+		GitIgnore: gi,
 	}
 	//不论是否启用都加入缓存中，新增时用来判断是否已存在
-	backup.Store(b.Src, bt)
+	backupMemory.Store(b.Src, bt)
 	if b.Disabled {
 		return
 	}
 
 	if b.Mode == model.MODE_POLLing { //轮询模式
 		cron := cron.NewCron(b.PollingInterval * time.Minute)
-		bt.cron = cron
-		backup.Store(b.Src, bt)
+		bt.Cron = cron
+		backupMemory.Store(b.Src, bt)
 		cron.Do(func() {
 			pollBackup(bt)
 		})
@@ -169,53 +169,40 @@ func addWatch(b model.Backup) {
 	watchOp(b.Src, "add")
 }
 func removeWatch(src string) {
-	b, ok := backup.Load(src)
+	b, ok := backupMemory.Load(src)
 	if !ok {
 		return
 	}
 	//停止定时任务
-	if b.cron != nil {
-		b.cron.Stop()
-		b.cron = nil
+	if b.Cron != nil {
+		b.Cron.Stop()
+		b.Cron = nil
 	}
 	watchOp(src, "remove")
 }
 func watchOp(src string, op string) {
-	//顶层目录
-	// if op == "add" {
-	// 	logrus.Infof("add watch %s", src)
-	// 	if err := fsnotifyWatcher.Add(src); err != nil {
-	// 		logrus.Error(errors.WithStack(err))
-	// 	}
-	// 	logrus.Infof("wathes is %+v", fsnotifyWatcher.WatchList())
-
-	// } else {
-	// 	if err := fsnotifyWatcher.Remove(src); err != nil {
-	// 		logrus.Error(errors.WithStack(err))
-	// 	}
-	// }
-	bt, _ := backup.Load(src)
+	bt, _ := backupMemory.Load(src)
 
 	// fsnotify不支持监听子文件夹，这里手动处理子文件夹
 	filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
+		if err != nil && err != filepath.SkipDir {
 			logrus.Error(errors.WithStack(err))
 			return err
 		}
 
 		if info.IsDir() {
-			if op == "add" {
-				if !isIgnored(bt, path) {
-					if err := fsnotifyWatcher.Add(path); err != nil {
-						logrus.Error(errors.WithStack(err))
-					}
-				}
-			} else {
-				if err := fsnotifyWatcher.Remove(path); err != nil {
-					logrus.Error(errors.WithStack(err))
-				}
+			if isIgnored(bt, path) {
+				return filepath.SkipDir
 			}
-
+			var fsnerr error
+			if op == "add" {
+				fsnerr = fsnotifyWatcher.Add(path)
+			} else {
+				fsnerr = fsnotifyWatcher.Remove(path)
+			}
+			if fsnerr != nil {
+				logrus.Error(errors.WithStack(fsnerr))
+			}
 			return nil
 		}
 		return nil
@@ -245,14 +232,14 @@ func eventDeal(event fsnotify.Event) {
 		return
 	}
 	//上传文件
-	for k, v := range backup.ToMap() {
+	for k, v := range backupMemory.ToMap() {
 		if !utils.IsSubPath(k, event.Name) {
 			continue
 		}
 		if isIgnored(v, event.Name) {
 			return
 		}
-		backupUpload(event.Name, v.m)
+		backupUpload(event.Name, v.Backup)
 		return
 	}
 
@@ -260,13 +247,13 @@ func eventDeal(event fsnotify.Event) {
 
 func initUpload(srcDir string) {
 	logrus.Infof("will init upload %s", srcDir)
-	bt, ok := backup.Load(srcDir)
+	bt, ok := backupMemory.Load(srcDir)
 	if !ok {
 		logrus.Warningf("not found %s", srcDir)
 		return
 	}
 
-	filepath.Walk(bt.m.Src, func(path string, info os.FileInfo, err error) error {
+	filepath.Walk(bt.Src, func(path string, info os.FileInfo, err error) error {
 		if err != nil && err != filepath.SkipDir {
 			logrus.Error(errors.WithStack(err))
 			return err
@@ -281,7 +268,7 @@ func initUpload(srcDir string) {
 		if isIgnored(bt, path) {
 			return nil
 		}
-		backupUpload(path, bt.m)
+		backupUpload(path, bt.Backup)
 		return nil
 	})
 }
@@ -303,24 +290,24 @@ func backupUpload(file string, b model.Backup) {
 // 首次备份后，会在每个目录下生成一个.alistPollBackup文件，用于记录当前文件夹下
 // 每个文件上次备份时的修改时间
 func pollBackup(bt backupT) {
-	fi, err := os.Stat(bt.m.Src)
+	fi, err := os.Stat(bt.Src)
 	if err != nil {
 		logrus.Error(errors.WithStack(err))
 		return
 	}
 	if !fi.IsDir() {
-		logrus.Errorf("src %s is not a dir", bt.m.Src)
+		logrus.Errorf("src %s is not a dir", bt.Src)
 		return
 	}
 	var lastBackupTime = make(map[string]map[string]time.Time)
-	modifiedTimes, err := readBackupTimeFile(filepath.Join(bt.m.Src, ".alistPollBackup"))
+	modifiedTimes, err := readBackupTimeFile(filepath.Join(bt.Src, ".alistPollBackup"))
 	if err != nil {
 		logrus.Error(errors.WithStack(err))
 		return
 	}
-	lastBackupTime[bt.m.Src] = modifiedTimes
+	lastBackupTime[bt.Src] = modifiedTimes
 
-	filepath.Walk(bt.m.Src, func(path string, info os.FileInfo, err error) error {
+	filepath.Walk(bt.Src, func(path string, info os.FileInfo, err error) error {
 		if err != nil && err != filepath.SkipDir {
 			logrus.Error(errors.WithStack(err))
 			return err
@@ -339,7 +326,7 @@ func pollBackup(bt backupT) {
 		if isIgnored(bt, path) || !isModified(lastBackupTime, path, info) {
 			return nil
 		}
-		backupUpload(path, bt.m)
+		backupUpload(path, bt.Backup)
 		return nil
 	})
 	//更新
@@ -349,7 +336,7 @@ func pollBackup(bt backupT) {
 			logrus.Error(errors.WithStack(err))
 			continue
 		}
-		if err := os.WriteFile(filepath.Join(k, ".alistPollBackup"), content, 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(k, ".alistPollBackup"), content, 0777); err != nil {
 			logrus.Error(errors.WithStack(err))
 		}
 	}
@@ -430,7 +417,7 @@ func compileGitignore(ig string) *ignore.GitIgnore {
 
 // match checks if a file or directory matches any of the compiled patterns.
 func isIgnored(bt backupT, path string) bool {
-	path = filepath.Clean(strings.TrimPrefix(filepath.ToSlash(path), bt.m.Src+"/"))
+	path = filepath.Clean(strings.TrimPrefix(filepath.ToSlash(path), bt.Src+"/"))
 	logrus.Infof("isIgnored %s", path)
-	return bt.gi.MatchesPath(path)
+	return bt.MatchesPath(path)
 }

@@ -1,11 +1,10 @@
 package backup
 
 import (
+	"crypto/md5"
 	"fmt"
 	"os"
-	"path/filepath"
 
-	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/errs"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/op"
@@ -18,17 +17,17 @@ import (
 
 type BackupTask struct {
 	tache.Base
-	File             string        `json:"file"`
-	Storage          driver.Driver `json:"storage"`
-	DstDirActualPath string        `json:"dst_dir_actual_path"`
+	File string `json:"file"`
+	// Storage          driver.Driver `json:"storage"`
+	DstDir string `json:"dst_dir"`
 }
 
 func (t *BackupTask) GetName() string {
-	return fmt.Sprintf("upload %s to [%s](%s)", t.File, t.Storage.GetStorage().MountPath, t.DstDirActualPath)
+	return fmt.Sprintf("upload %s to (%s)", t.File, t.DstDir)
 }
 
 func (t *BackupTask) GetStatus() string {
-	return "uploading"
+	return ""
 }
 
 func (t *BackupTask) Run() error {
@@ -50,15 +49,20 @@ func (t *BackupTask) Run() error {
 			Modified: fi.ModTime(),
 		},
 	}
+	storage, dstDirActualPath, err := op.GetStorageAndActualPath(t.DstDir)
+	if err != nil {
+		logrus.Error(errors.WithStack(err))
+		return errors.WithMessage(err, "failed get storage")
+	}
 
-	return op.Put(t.Ctx(), t.Storage, t.DstDirActualPath, s, t.SetProgress, true)
+	return op.Put(t.Ctx(), storage, dstDirActualPath, s, t.SetProgress, true)
 }
 
 var BackupTaskManager *tache.Manager[*BackupTask]
 
 // putAsTask add as a put task and return immediately
 func putAsTask(file string, dstDirPath string) (tache.TaskWithInfo, error) {
-	storage, dstDirActualPath, err := op.GetStorageAndActualPath(dstDirPath)
+	storage, actualPath, err := op.GetStorageAndActualPath(dstDirPath)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed get storage")
 	}
@@ -67,12 +71,12 @@ func putAsTask(file string, dstDirPath string) (tache.TaskWithInfo, error) {
 	}
 
 	t := &BackupTask{
-		Storage:          storage,
-		DstDirActualPath: dstDirActualPath,
-		File:             file,
+		DstDir: dstDirPath,
+		File:   file,
 	}
+	logrus.Infof("upload %s to %s, actualPath: %s ------------------------", file, dstDirPath, actualPath)
 	//设置任务id，避免重复创建任务
-	t.SetID(file + filepath.Join(storage.GetStorage().MountPath, dstDirActualPath))
+	t.SetID(fmt.Sprintf("%x", md5.Sum([]byte(file+dstDirPath))))
 	BackupTaskManager.Add(t)
 	return t, nil
 }
