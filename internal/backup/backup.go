@@ -34,8 +34,6 @@ var fsnotifyWatcher *fsnotify.Watcher
 
 // 监听以文件夹为单位，不支持单个文件
 func CreateBackup(c context.Context, b model.Backup) (uint64, error) {
-	logrus.Infof("req backup : %+v", b)
-
 	//判断源文件夹是否已经被监听
 	if backupMemory.Has(b.Src) {
 		return 0, fmt.Errorf("src %s has already been watched", b.Src)
@@ -246,7 +244,6 @@ func eventDeal(event fsnotify.Event) {
 }
 
 func initUpload(srcDir string) {
-	logrus.Infof("will init upload %s", srcDir)
 	bt, ok := backupMemory.Load(srcDir)
 	if !ok {
 		logrus.Warningf("not found %s", srcDir)
@@ -260,7 +257,6 @@ func initUpload(srcDir string) {
 		}
 		if info.IsDir() {
 			if isIgnored(bt, path) {
-				logrus.Infof("dir %s ignored", path)
 				return filepath.SkipDir
 			}
 			return nil
@@ -375,7 +371,6 @@ func BackupInit() {
 		logrus.Errorf("create fs watcher failed: %v", err)
 		return
 	}
-	logrus.Infof("fswatcher create success %+v", fsnotifyWatcher)
 	fsnotifyWatcher = watcher
 
 	// Start listening for events.
@@ -412,16 +407,12 @@ func BackupInit() {
 
 func compileGitignore(ig string) *ignore.GitIgnore {
 	s := strings.Split(ig, ";")
-	logrus.Infof("gitignore: %+v", s)
 	gi := ignore.CompileIgnoreLines(s...)
-	logrus.Infof("compile gitignore: %#v", gi)
-
 	return gi
 }
 
 // match checks if a file or directory matches any of the compiled patterns.
 func isIgnored(bt backupT, path string) bool {
 	path = filepath.Clean(strings.TrimPrefix(filepath.ToSlash(path), bt.Src+"/"))
-	logrus.Infof("isIgnored %s", path)
 	return bt.MatchesPath(path)
 }
