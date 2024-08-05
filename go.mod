@@ -25,6 +25,7 @@ require (
 	github.com/dustinxie/ecc v0.0.0-20210511000915-959544187564
 	github.com/foxxorcat/mopan-sdk-go v0.1.6
 	github.com/foxxorcat/weiyun-sdk-go v0.1.3
+	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gaoyb7/115drive-webdav v0.1.8
 	github.com/gin-contrib/cors v1.7.2
 	github.com/gin-gonic/gin v1.10.0
@@ -49,6 +50,7 @@ require (
 	github.com/pkg/sftp v1.13.6
 	github.com/pquerna/otp v1.4.0
 	github.com/rclone/rclone v1.67.0
+	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.9.0
