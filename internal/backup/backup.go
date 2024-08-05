@@ -274,6 +274,9 @@ func initUpload(srcDir string) {
 }
 
 func backupUpload(file string, b model.Backup) {
+	if filepath.Base(file) == ".alistPollBackup" {
+		return
+	}
 	dstDir := strings.Split(b.Dst, ";")
 	//上传时需要保持原来的目录结构
 	relativePath := strings.TrimPrefix(file, filepath.Dir(b.Src))
@@ -323,6 +326,7 @@ func pollBackup(bt backupT) {
 			}
 			lastBackupTime[path] = mt
 		}
+
 		if isIgnored(bt, path) || !isModified(lastBackupTime, path, info) {
 			return nil
 		}
