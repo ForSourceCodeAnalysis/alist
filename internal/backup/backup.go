@@ -328,6 +328,7 @@ func pollBackup(bt backupT) {
 		if isIgnored(bt, path) || !isModified(lastBackupTime, path, info) {
 			return nil
 		}
+		lastBackupTime[filepath.Dir(path)][path] = info.ModTime()
 		backupUpload(path, bt.Backup)
 		return nil
 	})
