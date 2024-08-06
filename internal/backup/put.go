@@ -63,7 +63,7 @@ var BackupTaskManager *tache.Manager[*BackupTask]
 
 // putAsTask add as a put task and return immediately
 func putAsTask(file string, dstDirPath string) (tache.TaskWithInfo, error) {
-	storage, actualPath, err := op.GetStorageAndActualPath(dstDirPath)
+	storage, _, err := op.GetStorageAndActualPath(dstDirPath)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed get storage")
 	}
