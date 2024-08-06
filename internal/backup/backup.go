@@ -76,7 +76,7 @@ func UpdateBackup(c context.Context, b model.Backup) error {
 			addWatch(b)
 		}
 		return nil
-	} else if !b.Disabled && (oldB.Mode != b.Mode || oldB.Ignore != b.Ignore) { //启用状态没变，且是启用，其它内容改变了,
+	} else if !b.Disabled && (oldB.Mode != b.Mode || oldB.Ignore != b.Ignore || oldB.PollingInterval != b.PollingInterval) { //启用状态没变，且是启用，其它内容改变了,
 		removeWatch(oldB.Src)
 		addWatch(b)
 	}
@@ -325,7 +325,7 @@ func pollBackup(bt backupT) {
 			return nil
 		}
 
-		if isIgnored(bt, path) || !isModified(lastBackupTime, path, info) {
+		if isIgnored(bt, path) || !isModified(lastBackupTime, path, info) || filepath.Dir(path) == ".alistPollBackup" {
 			return nil
 		}
 		lastBackupTime[filepath.Dir(path)][path] = info.ModTime()

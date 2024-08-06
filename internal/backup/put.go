@@ -54,6 +54,7 @@ func (t *BackupTask) Run() error {
 		logrus.Error(errors.WithStack(err))
 		return errors.WithMessage(err, "failed get storage")
 	}
+	logrus.Infof("backup task running, upload %s to %s, actualPath: %s +++++++++", t.File, t.DstDir, dstDirActualPath)
 
 	return op.Put(t.Ctx(), storage, dstDirActualPath, s, t.SetProgress, true)
 }
@@ -74,7 +75,7 @@ func putAsTask(file string, dstDirPath string) (tache.TaskWithInfo, error) {
 		DstDir: dstDirPath,
 		File:   file,
 	}
-	logrus.Infof("upload %s to %s, actualPath: %s ------------------------", file, dstDirPath, actualPath)
+	// logrus.Infof("upload %s to %s, actualPath: %s ------------------------", file, dstDirPath, actualPath)
 	//设置任务id，避免重复创建任务
 	t.SetID(fmt.Sprintf("%x", md5.Sum([]byte(file+dstDirPath))))
 	BackupTaskManager.Add(t)
