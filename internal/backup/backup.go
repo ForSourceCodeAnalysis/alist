@@ -318,9 +318,11 @@ func pollBackup(bt backupT) {
 			mt, err := readBackupTimeFile(filepath.Join(path, ".alistPollBackup"))
 			if err != nil {
 				logrus.Error(errors.WithStack(err))
-				return err
+			} else {
+				lastBackupTime[path] = mt
 			}
-			lastBackupTime[path] = mt
+
+			return nil
 		}
 
 		if isIgnored(bt, path) || !isModified(lastBackupTime, path, info) {
