@@ -120,6 +120,7 @@ func GetStorage(c *gin.Context) {
 }
 
 func LoadAllStorages(c *gin.Context) {
+	// storages get from db
 	storages, err := db.GetEnabledStorages()
 	if err != nil {
 		log.Errorf("failed get enabled storages: %+v", err)
@@ -130,10 +131,13 @@ func LoadAllStorages(c *gin.Context) {
 	go func(storages []model.Storage) {
 		//current mount paths in db
 		var mountPaths []string
+
 		for _, storage := range storages {
 			mountPaths = append(mountPaths, storage.MountPath)
-			//GetStorageByMountPath used old storagesMap,if err is not nil,
-			// the mountPath is added by other server , just do LoadStorage
+			//GetStorageByMountPath uses the memory variable storagesMap, which is associated with the current server.
+			// This may cause the obtained storageDrivers to be inconsistent with  the storages obtained from the database.
+			// Because other servers using the same database may add or remove storage in the database.
+			// So if err is not nil, it means that the storage may be added by other servers, do not skip loading the storage.
 			storageDriver, err := op.GetStorageByMountPath(storage.MountPath)
 			if err == nil {
 				if err := storageDriver.Drop(context.Background()); err != nil {
@@ -148,7 +152,7 @@ func LoadAllStorages(c *gin.Context) {
 			log.Infof("success load storage: [%s], driver: [%s]",
 				storage.MountPath, storage.Driver)
 		}
-		//deal the keys in storagesMap, but not in mountPaths
+		//deal the keys in storagesMap, but not in db
 		op.DeleteMemoryStorage(mountPaths)
 		conf.StoragesLoaded = true
 	}(storages)
