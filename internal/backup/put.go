@@ -9,14 +9,16 @@ import (
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/op"
 	"github.com/alist-org/alist/v3/internal/stream"
+	"github.com/alist-org/alist/v3/internal/task"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/xhofe/tache"
 )
 
+// BackupTask struct define backup task
 type BackupTask struct {
-	tache.Base
+	task.TaskWithCreator
 	File string `json:"file"`
 	// Storage          driver.Driver `json:"storage"`
 	DstDir string `json:"dst_dir"`
@@ -59,6 +61,7 @@ func (t *BackupTask) Run() error {
 	return op.Put(t.Ctx(), storage, dstDirActualPath, s, t.SetProgress, true)
 }
 
+// BackupTaskManager is used to manage all backup tasks
 var BackupTaskManager *tache.Manager[*BackupTask]
 
 // putAsTask add as a put task and return immediately
