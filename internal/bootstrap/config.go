@@ -60,6 +60,9 @@ func InitConfig() {
 	if !conf.Conf.Force {
 		confFromEnv()
 	}
+	if conf.Conf.ServerID == "" {
+		log.Fatal("server_id can't be empty,please set server_id in config file")
+	}
 	// convert abs path
 	if !filepath.IsAbs(conf.Conf.TempDir) {
 		absPath, err := filepath.Abs(conf.Conf.TempDir)
