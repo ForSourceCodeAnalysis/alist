@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/alist-org/alist/v3/cmd/flags"
+	"github.com/alist-org/alist/v3/extensions"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/message"
 	"github.com/alist-org/alist/v3/pkg/utils"
@@ -81,6 +82,11 @@ func Init(e *gin.Engine) {
 	if flags.Debug || flags.Dev {
 		debug(g.Group("/debug"))
 	}
+
+	extensions.RegisterRoute(map[string]*gin.RouterGroup{
+		"backup": auth.Group("/admin", middlewares.AuthAdmin),
+	})
+
 	static.Static(g, func(handlers ...gin.HandlerFunc) {
 		e.NoRoute(handlers...)
 	})

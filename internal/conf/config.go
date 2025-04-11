@@ -7,6 +7,12 @@ import (
 	"github.com/alist-org/alist/v3/pkg/utils/random"
 )
 
+type RedisConf struct {
+	Addr     string `json:"addr" env:"ADDR"`
+	Password string `json:"password" env:"PASSWORD"`
+	DB       int    `json:"db" env:"DB"`
+}
+
 type Database struct {
 	Type        string `json:"type" env:"TYPE"`
 	Host        string `json:"host" env:"HOST"`
@@ -91,6 +97,7 @@ type Config struct {
 	Tasks                 TasksConfig `json:"tasks" envPrefix:"TASKS_"`
 	Cors                  Cors        `json:"cors" envPrefix:"CORS_"`
 	S3                    S3          `json:"s3" envPrefix:"S3_"`
+	Redis                 RedisConf   `json:"redis" envPrefix:"REDIS_"`
 }
 
 func DefaultConfig() *Config {
@@ -116,6 +123,11 @@ func DefaultConfig() *Config {
 			Port:        0,
 			TablePrefix: "x_",
 			DBFile:      dbPath,
+		},
+		Redis: RedisConf{
+			Addr:     "127.0.0.1:6379",
+			Password: "",
+			DB:       0,
 		},
 		Meilisearch: Meilisearch{
 			Host: "http://localhost:7700",

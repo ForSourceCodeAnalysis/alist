@@ -13,6 +13,11 @@ import (
 	"syscall"
 	"time"
 
+	ftpserver "github.com/KirCute/ftpserverlib-pasvportmap"
+	"github.com/KirCute/sftpd-alist"
+	"github.com/alist-org/alist/v3/extensions"
+	"github.com/alist-org/alist/v3/internal/fs"
+
 	"github.com/alist-org/alist/v3/cmd/flags"
 	"github.com/alist-org/alist/v3/internal/bootstrap"
 	"github.com/alist-org/alist/v3/internal/conf"
@@ -38,6 +43,7 @@ the address is defined in config file`,
 		bootstrap.InitOfflineDownloadTools()
 		bootstrap.LoadStorages()
 		bootstrap.InitTaskManager()
+		extensions.Init()
 		if !flags.Debug && !flags.Dev {
 			gin.SetMode(gin.ReleaseMode)
 		}

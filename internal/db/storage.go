@@ -36,7 +36,7 @@ func DeleteStorageById(id uint) error {
 
 // GetStorages Get all storages from database order by index
 func GetStorages(pageIndex, pageSize int) ([]model.Storage, int64, error) {
-	storageDB := db.Model(&model.Storage{}).Where("(diver=? AND server_id=?) OR driver != ?", "Local", conf.Conf.ServerID, "Local")
+	storageDB := db.Model(&model.Storage{}).Where("(driver=? AND server_id=?) OR driver != ?", "Local", conf.Conf.ServerID, "Local")
 	var count int64
 	if err := storageDB.Count(&count).Error; err != nil {
 		return nil, 0, errors.Wrapf(err, "failed get storages count")
@@ -61,7 +61,7 @@ func GetStorageById(id uint) (*model.Storage, error) {
 // GetStorageByMountPath Get Storage by mountPath, used to update storage usually
 func GetStorageByMountPath(mountPath string) (*model.Storage, error) {
 	var storage model.Storage
-	if err := db.Where("mount_path = ? AND ((diver=? AND server_id=?) OR driver != ?) ", mountPath, "Local", conf.Conf.ServerID, "Local").First(&storage).Error; err != nil {
+	if err := db.Where("mount_path = ? AND ((driver=? AND server_id=?) OR driver != ?) ", mountPath, "Local", conf.Conf.ServerID, "Local").First(&storage).Error; err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return &storage, nil
@@ -69,7 +69,7 @@ func GetStorageByMountPath(mountPath string) (*model.Storage, error) {
 
 func GetEnabledStorages() ([]model.Storage, error) {
 	var storages []model.Storage
-	err := addStorageOrder(db).Where(fmt.Sprintf("%s = ?", columnName("disabled"))+" AND ((diver=? AND server_id=?) OR driver != ?)", false, "Local", conf.Conf.ServerID, "Local").Find(&storages).Error
+	err := addStorageOrder(db).Where(fmt.Sprintf("%s = ?", columnName("disabled"))+" AND ((driver=? AND server_id=?) OR driver != ?)", false, "Local", conf.Conf.ServerID, "Local").Find(&storages).Error
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

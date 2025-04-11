@@ -12,6 +12,7 @@ var (
 	GitCommit  string
 	Version    string = "dev"
 	WebVersion string
+	Extra      string
 )
 
 var (
