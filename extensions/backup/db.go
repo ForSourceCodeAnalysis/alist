@@ -64,7 +64,12 @@ func checkBackupExistBySrc(src string) (bool, error) {
 }
 
 func deleteBackupByIDDB(id uint64) error {
-	return errors.WithStack(db.GetDb().Delete(&Backup{}, id).Error)
+	err := db.GetDb().Delete(&Backup{}, id).Error
+	db.GetDb().Where("backup_id = ?", id).Delete(&BackupTime{})
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
 }
 
 func saveLastBackupTime(lastModifiedTime time.Time, path string, bid uint64, t time.Duration) error {
