@@ -28,9 +28,10 @@ var fsnotifyWatcher *fsnotify.Watcher
 var cronSchedule gocron.Scheduler
 
 var bts generic_sync.MapOf[string, *backupT]
+var delayTimers generic_sync.MapOf[string, *time.Timer]
 
-// BackupInit 从数据库初始化备份配置
-func BackupInit() {
+// Init 从数据库初始化备份配置
+func Init() {
 	initDB()
 	queue.RegisterHandler(taskTypeUpload, handleBackupUploadTask)
 	logrus.Info("register backup task handler success")
@@ -222,27 +223,41 @@ func eventDeal(event fsnotify.Event) {
 
 // 同一个文件的同一个事件可能短时间内多次触发，比如复制一个文件到监听文件夹中，会首先触发一次Op.Create事件
 // 随着复制进行，文件内容不断变化，会一直触发Op.Write事件,所以要做优化处理，避免一直加入上传队列
-// 这里只是做了简单的处理，延迟10min，判断taskid是否重复
+// 延迟1min加入队列，如果相同事件再次触发，顺延1min，直到没有相同事件触发，到达定时时间再添加任务
 func addQueue(path string, b *Backup) {
 	logrus.Infof("add queue, path: %s", path)
-	t, err := newBackupUploadTask(path, b)
-	if err != nil {
-		logrus.Error(path, errors.WithStack(err))
-		return
-	}
-	options := []asynq.Option{
-		asynq.TaskID(path),
-		asynq.ProcessAt(time.Now().Add(10 * time.Minute)),
-		asynq.MaxRetry(1),
-		asynq.Unique(time.Hour), //1h内保持唯一，如果执行了，会提前释放
-	}
-	if _, err = queue.GetClient().Enqueue(t, options...); err != nil {
-		if errors.Is(err, asynq.ErrTaskIDConflict) {
-			logrus.Infof("task id conflict,%v", path)
+	t := time.AfterFunc(time.Minute, func() {
+		defer delayTimers.Delete(path)
+		logrus.Infof("timer trigger, execute add queue, path:%v", path)
+
+		t, err := newBackupUploadTask(path, b)
+		if err != nil {
+			logrus.Error(path, errors.WithStack(err))
 			return
 		}
-		logrus.Error(path, errors.WithStack(err))
-		return
+		options := []asynq.Option{
+			asynq.TaskID(path),
+			// asynq.ProcessAt(time.Now().Add(10 * time.Minute)),
+			asynq.MaxRetry(1),
+			asynq.Unique(time.Hour), //1h内保持唯一，如果执行了，会提前释放
+		}
+		if _, err = queue.GetClient().Enqueue(t, options...); err != nil {
+			if errors.Is(err, asynq.ErrTaskIDConflict) {
+				logrus.Infof("task id conflict,%v", path)
+				return
+			}
+			logrus.Error(path, errors.WithStack(err))
+			return
+		}
+
+	})
+
+	timer, loaded := delayTimers.LoadOrStore(path, t)
+
+	if loaded {
+		t.Stop()
+		timer.Reset(time.Minute)
+		logrus.Infof("timer reset, path:%v", path)
 	}
 }
 

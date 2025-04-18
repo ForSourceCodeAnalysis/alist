@@ -13,7 +13,7 @@ import (
 )
 
 func initDB() {
-	if err := db.GetDb().AutoMigrate(&Backup{}, &BackupTime{}); err != nil {
+	if err := db.GetDb().AutoMigrate(&Backup{}, &File{}); err != nil {
 		log.Fatalf("failed migrate database: %s", err.Error())
 	}
 }
@@ -65,29 +65,31 @@ func checkBackupExistBySrc(src string) (bool, error) {
 
 func deleteBackupByIDDB(id uint64) error {
 	err := db.GetDb().Delete(&Backup{}, id).Error
-	db.GetDb().Where("backup_id = ?", id).Delete(&BackupTime{})
+	db.GetDb().Where("backup_id = ?", id).Delete(&File{})
 	if err != nil {
 		return errors.WithStack(err)
 	}
 	return nil
 }
 
-func saveLastBackupTime(lastModifiedTime time.Time, path string, bid uint64, t time.Duration) error {
-	return errors.WithStack(db.GetDb().Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "backup_id"}, {Name: "name"}, {Name: "dir"}},
-		DoUpdates: clause.AssignmentColumns([]string{"last_modified_time"}),
-	}).Create(&BackupTime{
-		BackupID:         bid,
-		LastModifiedTime: lastModifiedTime,
-		Name:             filepath.Base(path),
-		Dir:              filepath.Dir(path),
-		TimeConsuming:    uint64(t.Seconds()),
-	}).Error)
+func saveFileDB(bt *File) error {
+	return errors.WithStack(db.GetDb().Transaction(
+		func(tx *gorm.DB) error {
+			var existing File
+			err := tx.Clauses(clause.Locking{
+				Strength: "UPDATE "}).Where("backup_id = ? AND name = ? AND dir = ?", bt.BackupID, bt.Name, bt.Dir).First(&existing).Error
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return tx.Create(bt).Error
+			}
+			return tx.Model(&File{}).Where("id=?", existing.ID).Update("last_modified_time", bt.LastModifiedTime).Error
+
+		}))
+
 }
 
 func getLastModifiedTime(bid uint64) map[string]time.Time {
 	m := make(map[string]time.Time)
-	var t []BackupTime
+	var t []File
 	if err := db.GetDb().Where("backup_id = ?", bid).Find(&t).Error; err != nil {
 		return m
 	}
@@ -100,14 +102,14 @@ func getLastModifiedTime(bid uint64) map[string]time.Time {
 	return m
 }
 
-func getLastBackupDB(bid uint64, page, pageSize int) ([]BackupTime, int64, error) {
-	tdb := db.GetDb().Model(&BackupTime{})
+func getBackupFilesDB(bid uint64, page, pageSize int) ([]File, int64, error) {
+	tdb := db.GetDb().Model(&File{})
 	var count int64
 
 	if err := tdb.Where("backup_id=?", bid).Count(&count).Error; err != nil {
 		return nil, 0, errors.Wrapf(err, "failed get last backup count")
 	}
-	var ts []BackupTime
+	var ts []File
 	if err := tdb.Where("backup_id=?", bid).Offset((page - 1) * pageSize).Limit(pageSize).Find(&ts).Error; err != nil {
 		return nil, 0, errors.WithStack(err)
 	}

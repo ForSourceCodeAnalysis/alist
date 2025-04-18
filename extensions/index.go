@@ -13,8 +13,11 @@ func RegisterRoute(g map[string]*gin.RouterGroup) {
 
 // Init extension
 func Init() {
+	// 在使用队列相关的操作前，要确保队列已经初始化了
 	queue.Init()
-	backup.BackupInit()
 
+	backup.Init()
+
+	// 启动队列前，需要确保已经注册了任务处理函数，queue.RegisterHandler()
 	queue.Start()
 }

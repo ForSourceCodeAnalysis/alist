@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -88,7 +89,13 @@ func handleBackupUploadTask(ctx context.Context, t *asynq.Task) error {
 		}
 	}
 	tc := time.Since(st)
-	saveLastBackupTime(info.ModTime(), p.Path, p.Backup.ID, tc)
+	saveFileDB(&File{
+		BackupID:         p.Backup.ID,
+		Dir:              filepath.Dir(p.Path),
+		Name:             filepath.Base(p.Path),
+		LastModifiedTime: info.ModTime(),
+		TimeConsuming:    uint64(tc.Seconds()),
+	})
 
 	return nil
 }

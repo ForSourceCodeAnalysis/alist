@@ -94,7 +94,7 @@ func deleteBackup(c *gin.Context) {
 	common.SuccessResp(c)
 }
 
-func getLastBackup(c *gin.Context) {
+func getBackupFiles(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -108,7 +108,7 @@ func getLastBackup(c *gin.Context) {
 	}
 	req.Validate()
 
-	backups, count, err := getLastBackupDB(uint64(id), req.Page, req.PerPage)
+	backups, count, err := getBackupFilesDB(uint64(id), req.Page, req.PerPage)
 	if err != nil {
 		common.ErrorResp(c, err, 500)
 		return

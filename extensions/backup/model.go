@@ -24,14 +24,19 @@ type Backup struct {
 	CreatedAt  time.Time `json:"created_at" gorm:"autoUpdateTime"`
 }
 
-// BackupTime 记录上次更新时间
-type BackupTime struct {
+// File 备份文件
+type File struct {
 	ID               uint64    `json:"id" gorm:"primaryKey;autoIncrement"`
+	BackupID         uint64    `json:"backup_id"`
+	Name             string    `json:"name"`
 	Dir              string    `json:"dir"`
-	Name             string    `json:"name" gorm:"index:idex_name_backup"`
-	BackupID         uint64    `json:"backup_id" gorm:"index:idex_path_backup"`
 	TimeConsuming    uint64    `json:"time_consuming"`
-	LastModifiedTime time.Time `json:"last_modified_time"` //dst dir, one or more, split by ";"
+	LastModifiedTime time.Time `json:"last_modified_time"`
 	UpdatedAt        time.Time `json:"updated_at" gorm:"autoUpdateTime"`
 	CreatedAt        time.Time `json:"created_at" gorm:"autoUpdateTime"`
+}
+
+// TableName define table name
+func (File) TableName() string {
+	return "x_backup_files"
 }
