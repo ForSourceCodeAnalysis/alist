@@ -2,6 +2,7 @@ package extensions
 
 import (
 	"github.com/alist-org/alist/v3/extensions/backup"
+	"github.com/alist-org/alist/v3/extensions/cron"
 	"github.com/alist-org/alist/v3/extensions/queue"
 	"github.com/gin-gonic/gin"
 )
@@ -9,6 +10,7 @@ import (
 // RegisterRoute register extension routes
 func RegisterRoute(g map[string]*gin.RouterGroup) {
 	backup.Route(g["backup"])
+	cron.Route(g["cron"])
 }
 
 // Init extension

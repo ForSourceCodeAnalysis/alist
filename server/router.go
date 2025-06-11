@@ -83,8 +83,10 @@ func Init(e *gin.Engine) {
 		debug(g.Group("/debug"))
 	}
 
+	admin := auth.Group("/admin", middlewares.AuthAdmin)
 	extensions.RegisterRoute(map[string]*gin.RouterGroup{
-		"backup": auth.Group("/admin", middlewares.AuthAdmin),
+		"backup": admin,
+		"cron":   admin,
 	})
 
 	static.Static(g, func(handlers ...gin.HandlerFunc) {
