@@ -13,10 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	ftpserver "github.com/KirCute/ftpserverlib-pasvportmap"
-	"github.com/KirCute/sftpd-alist"
 	"github.com/alist-org/alist/v3/extensions"
-	"github.com/alist-org/alist/v3/internal/fs"
 
 	"github.com/alist-org/alist/v3/cmd/flags"
 	"github.com/alist-org/alist/v3/internal/bootstrap"
